@@ -3,13 +3,19 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node -r dotenv/config ./bin/www"
+    "test": "npx mocha",
+    "start": "node -r dotenv/config ./bin/www | npx bunyan --color"
   },
   "dependencies": {
+    "bunyan": "^1.8.12",
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.9",
     "dotenv": "^6.1.0",
     "express": "~4.16.0",
-    "morgan": "~1.9.0"
+    "mocha": "^5.2.0",
+    "morgan": "~1.9.0",
+    "nconf": "^0.10.0",
+    "nodemailer": "^4.7.0",
+    "should": "^13.2.3"
   }
 }
