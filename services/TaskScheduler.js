@@ -40,6 +40,8 @@ class TaskScheduler extends EventEmitter {
         if (!this.active) {
             logger.debug('task scheduler starts');
             this.active = true;
+
+            this._loadFromDatabase(new Date(moment().valueOf() + this.config.scheduleWindowInMilliseconds));
             this.loadDatabaseTimer = setInterval(() => {
                 this._loadFromDatabase(new Date(moment().valueOf() + this.config.scheduleWindowInMilliseconds));
             }, this.config.databaseCheckIntervalInMilliseconds);
@@ -48,6 +50,13 @@ class TaskScheduler extends EventEmitter {
         }
     }
 
+    /**
+     * to fire the specified 'event' with context at the given timestamp
+     * @param {string} event the name of the event
+     * @param {object} context
+     * @param {number}timestampInMilliseconds
+     * @returns {Promise<void>} A promise which resolves when the record is properly inserted into the database
+     */
     async fireAt(event, context, timestampInMilliseconds) {
         const record = {
             event: event,
@@ -57,23 +66,21 @@ class TaskScheduler extends EventEmitter {
         };
         logger.trace(record, 'taskScheduler.fireAt triggered');
 
-        try {
-            const insertResult = await this.database.collection(collection).insertOne(record);
-            if (insertResult.result.ok) {
-                logger.debug({id: insertResult.insertedId.toHexString()}, 'taskScheduler record created');
+        const insertResult = await this.database.collection(collection).insertOne(record);
+        if (insertResult.result.ok) {
+            const id = insertResult.insertedId.toHexString();
+            logger.debug({id: id}, 'taskScheduler record created');
 
-                const timeDiff = timestampInMilliseconds - moment().valueOf();
-                if (this.active && timeDiff < this.config.scheduleWindowInMilliseconds) {
-                    this._loadFromDatabase(new Date(timestampInMilliseconds));
-                }
-            } else {
-                logger.error({
-                    record: record,
-                    result: insertResult.result
-                }, 'invalid taskScheduler record insert result');
+            const timeDiff = timestampInMilliseconds - moment().valueOf();
+            if (this.active && timeDiff < this.config.scheduleWindowInMilliseconds) {
+                this._loadFromDatabase(new Date(timestampInMilliseconds));
             }
-        } catch (err) {
-            logger.error({record: record, err: err}, 'failed to create taskScheduler record')
+            return id;
+        } else {
+            logger.error({
+                record: record,
+                result: insertResult.result
+            }, 'invalid taskScheduler record insert result');
         }
     }
 
@@ -86,7 +93,7 @@ class TaskScheduler extends EventEmitter {
             const result = await this.database.collection(collection).findOneAndUpdate({
                 status: 'CREATED',
                 triggerTime: {
-                    $lt: scheduleWindow
+                    $lte: scheduleWindow
                 }
             }, {
                 $set: {

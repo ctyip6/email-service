@@ -8,6 +8,15 @@ var app = require('../app');
 var debug = require('debug')('email-service:server');
 var http = require('http');
 const mongodb = require('../services/mongodb');
+const {taskScheduler, mailService} = require('../services/services');
+const bunyan = require('bunyan');
+
+/**
+ * Logger
+ */
+const logger = bunyan.createLogger({
+    name: 'app'
+});
 
 /**
  * Get port from environment and store in Express.
@@ -23,12 +32,32 @@ app.set('port', port);
 var server = http.createServer(app);
 
 /**
- * Listen on provided port, on all network interfaces.
+ * shutdown hook
+ */
+function cleanUp() {
+    logger.info('cleanUp starts');
+    server.close(() => {
+        taskScheduler.close().finally(() => {
+            logger.info('cleanUp finishes');
+            process.exit(0);
+        });
+    });
+}
+
+process.on('SIGINT', cleanUp);
+process.on('SIGTERM', cleanUp);
+
+/**
+ * Connect to MongoDB
  */
 mongodb.connect().then(() => {
+    /**
+     * Listen on provided port, on all network interfaces.
+     */
     server.listen(port);
     server.on('error', onError);
     server.on('listening', onListening);
+    taskScheduler.start();
 });
 
 /**
@@ -90,3 +119,4 @@ function onListening() {
         : 'port ' + addr.port;
     debug('Listening on ' + bind);
 }
+

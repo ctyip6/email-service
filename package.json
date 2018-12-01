@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "test": "npx mocha",
+    "debug": "node -r dotenv/config ./bin/www",
     "start": "node -r dotenv/config ./bin/www | npx bunyan --color"
   },
   "dependencies": {
@@ -12,12 +13,14 @@
     "debug": "~2.6.9",
     "dotenv": "^6.1.0",
     "express": "~4.16.0",
+    "express-validator": "^5.3.0",
     "mocha": "^5.2.0",
     "moment": "^2.22.2",
     "mongodb": "^3.1.10",
     "morgan": "~1.9.0",
     "nconf": "^0.10.0",
     "nodemailer": "^4.7.0",
-    "should": "^13.2.3"
+    "should": "^13.2.3",
+    "validator": "^10.9.0"
   }
 }
