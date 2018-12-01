@@ -1,6 +1,6 @@
-#Email Service
+# Email Service
 
-##Background
+## Background
 A web service which accepts email information and schedules and sends the email at specified time. This repository only contains a headless web server. Frontend is not included.
 
 ## Prerequisite
