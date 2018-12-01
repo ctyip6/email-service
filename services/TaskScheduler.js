@@ -2,11 +2,12 @@ const EventEmitter = require('events');
 const moment = require('moment');
 const ObjectID = require('mongodb').ObjectID;
 const bunyan = require('bunyan');
+const nconf = require('nconf');
 
 const logger = bunyan.createLogger({
     serializers: bunyan.stdSerializers,
     name: 'TaskScheduler',
-    level: 'TRACE'
+    level: nconf.get('logger:level') || 'info'
 });
 
 const defaultConfig = {

@@ -1,8 +1,11 @@
 const bunyan = require('bunyan');
+const nconf = require('nconf');
 
 const triggerSendEvent = 'triggerSendEvent';
 const logger = bunyan.createLogger({
-    name: 'MailScheduler'
+    name: 'MailScheduler',
+    serializers: bunyan.stdSerializers,
+    level: nconf.get('logger:level') || 'info'
 });
 
 class MailScheduler {

@@ -1,9 +1,11 @@
 const nodemailer = require('nodemailer');
 const bunyan = require('bunyan');
+const nconf = require('nconf');
 
 const logger = bunyan.createLogger({
     name: 'emailService',
-    level: 'trace'
+    serializers: bunyan.stdSerializers,
+    level: nconf.get('logger:level') || 'info'
 });
 
 class SendMailError extends Error {

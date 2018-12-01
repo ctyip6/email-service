@@ -4,10 +4,13 @@ const validator = require('validator');
 const express = require('express');
 const bunyan = require('bunyan');
 const router = express.Router();
+const nconf = require('nconf');
 
 
 const logger = bunyan.createLogger({
-    name: 'mail'
+    name: 'mail',
+    serializers: bunyan.stdSerializers,
+    level: nconf.get('logger:level') || 'info'
 });
 
 function requestBodyToMessage(body) {

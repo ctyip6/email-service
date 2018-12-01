@@ -9,14 +9,6 @@ var debug = require('debug')('email-service:server');
 var http = require('http');
 const mongodb = require('../services/mongodb');
 const {taskScheduler, mailService} = require('../services/services');
-const bunyan = require('bunyan');
-
-/**
- * Logger
- */
-const logger = bunyan.createLogger({
-    name: 'app'
-});
 
 /**
  * Get port from environment and store in Express.
@@ -35,10 +27,8 @@ var server = http.createServer(app);
  * shutdown hook
  */
 function cleanUp() {
-    logger.info('cleanUp starts');
     server.close(() => {
         taskScheduler.close().finally(() => {
-            logger.info('cleanUp finishes');
             process.exit(0);
         });
     });
