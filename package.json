@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "test": "npx mocha",
-    "debug": "node -r dotenv/config ./bin/www",
     "start": "node -r dotenv/config ./bin/www | npx bunyan --color"
   },
   "dependencies": {
