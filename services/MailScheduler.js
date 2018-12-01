@@ -8,6 +8,9 @@ const logger = bunyan.createLogger({
     level: nconf.get('logger:level') || 'info'
 });
 
+/**
+ * Class responsible for scheduling send email tasks
+ */
 class MailScheduler {
 
     /**
@@ -24,7 +27,7 @@ class MailScheduler {
     /**
      * Send email at specified timestamp
      *
-     * @param mail please refer to the message configuration of nodemailer. Field "from" should be omitted as it will be replace by the mail server configuration.
+     * @param mail please refer to the message configuration of nodemailer for the data structure. Field "from" should be omitted as it will be replace by the mail server configuration.
      * @param {number} timestampInMilliseconds the specified timestamp
      */
     async sendMailAt(mail, timestampInMilliseconds) {

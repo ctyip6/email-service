@@ -23,6 +23,9 @@ function requestBodyToMessage(body) {
     return message;
 }
 
+/**
+ * Accepting email for scheduling
+ */
 router.post('/', [
     body('to')
         .isArray()
@@ -40,6 +43,7 @@ router.post('/', [
         .optional()
         .isString(),
 ], async (req, res, next) => {
+    // request validation
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({errors: errors.array()});
@@ -47,6 +51,7 @@ router.post('/', [
 
     const message = requestBodyToMessage(req.body);
     try {
+        // schedule the email
         const taskId = await mailScheduler.sendMailAt(message, req.body.timestamp);
         return res.status(200).json({taskId: taskId});
     } catch (err) {

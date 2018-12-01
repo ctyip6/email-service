@@ -19,6 +19,16 @@ const defaultConfig = {
 
 const collection = 'taskScheduler';
 
+/**
+ * Database backed scheduler, it accepts request for emitting an event at a specified timestamp. Each request consists of the following info
+ * 1. event
+ * 2. context
+ * 3. trigger timestamp
+ * The task scheduler will then emit the specified event with the context at the timestamp provided.
+ *
+ * Upon receiving the request, the task scheduler stores in database. With a configurable time interval, it checks the database and load the events within a time window to in-memory timer.
+ * As all events are stored in database, the event can remain even if the server shuts down or restarts. The regular check prevents busy reading from database at each second or millisecond.
+ */
 class TaskScheduler extends EventEmitter {
 
     constructor(databaseProvider, config) {
@@ -37,6 +47,9 @@ class TaskScheduler extends EventEmitter {
         return this.databaseProvider.database;
     }
 
+    /**
+     * starts the scheduling, if the scheduler is not started, it will only store the events to database without triggering them
+     */
     start() {
         if (!this.active) {
             logger.debug('task scheduler starts');
@@ -52,7 +65,7 @@ class TaskScheduler extends EventEmitter {
     }
 
     /**
-     * to fire the specified 'event' with context at the given timestamp
+     * to scheduler an event and fire it with context at the given timestamp
      * @param {string} event the name of the event
      * @param {object} context
      * @param {number}timestampInMilliseconds
@@ -74,7 +87,7 @@ class TaskScheduler extends EventEmitter {
 
             const timeDiff = timestampInMilliseconds - moment().valueOf();
             if (this.active && timeDiff < this.config.scheduleWindowInMilliseconds) {
-                this._loadFromDatabase(new Date(timestampInMilliseconds));
+                await this._loadFromDatabase(new Date(timestampInMilliseconds));
             }
             return id;
         } else {
@@ -85,12 +98,19 @@ class TaskScheduler extends EventEmitter {
         }
     }
 
+    /**
+     * Internal method for checking if there is an event within the schedule window and load it to in-memory timer if exists
+     * @param {Date} scheduleWindow for checking if there are any events in database to be emitted before the specified time
+     * @returns {Promise<void>} resolve when one event is scheduled or no available events found.
+     * @private
+     */
     async _loadFromDatabase(scheduleWindow) {
         logger.trace({
             scheduleWindow: scheduleWindow
         }, 'loadFromDatabase triggered');
 
         try {
+            // check from database
             const result = await this.database.collection(collection).findOneAndUpdate({
                 status: 'CREATED',
                 triggerTime: {
@@ -102,15 +122,17 @@ class TaskScheduler extends EventEmitter {
                 }
             });
 
-            if (result.ok && result.value) {
+            if (result.ok && result.value) { // record found
                 const record = result.value;
                 const id = record._id.toHexString();
 
                 logger.debug({id: id}, 'scheduling task from database to memory');
 
+                // schedule the event to in memory time
                 this._scheduleSingleEventToMemory(id, record.event, record.context, record.triggerTime.getTime());
 
                 if (this.active) {
+                    // check and schedule the next event if exists
                     this._loadFromDatabase(scheduleWindow);
                 }
             }
@@ -120,6 +142,14 @@ class TaskScheduler extends EventEmitter {
     }
 
 
+    /**
+     * schedule one event to in-memory timer
+     * @param {string} id the database record id, for marking the record as fired upon emit or rollback to created status when closing the scheduler
+     * @param {string} event the event name
+     * @param context arbitrary data to be fired with the event
+     * @param {number} triggerTimestampInMilliseconds the timestamp at which the event to be fired
+     * @private
+     */
     _scheduleSingleEventToMemory(id, event, context, triggerTimestampInMilliseconds) {
         const delay = triggerTimestampInMilliseconds - moment().valueOf();
         this.timeout.set(id, setTimeout(async () => {
@@ -141,6 +171,10 @@ class TaskScheduler extends EventEmitter {
         }, delay));
     }
 
+    /**
+     * stop the in-memory timer and rollback the status of the events which schedule to in-memory but not yet triggered.
+     * @returns {*}
+     */
     close() {
         logger.trace('shutting down taskScheduler');
         if (this.active) {

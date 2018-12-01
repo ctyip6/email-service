@@ -8,16 +8,14 @@ describe('emailService', () => {
     describe('sendMessage', () => {
         it('should send successfully', async () => {
             const mailService = new MailService({
-                servers: {
-                    server1: {
-                        host: 'smtp.ethereal.email',
-                        port: 587,
-                        auth: {
-                            user: 'qwitxz2ilncdotnf@ethereal.email',
-                            pass: 'KGMCGkZPMpYRKtkQFU'
-                        }
+                servers: [{
+                    host: 'smtp.ethereal.email',
+                    port: 587,
+                    auth: {
+                        user: 'qwitxz2ilncdotnf@ethereal.email',
+                        pass: 'KGMCGkZPMpYRKtkQFU'
                     }
-                }
+                }]
             });
 
             const message = {
@@ -35,8 +33,8 @@ describe('emailService', () => {
 
         it('should fail over successfully', async () => {
             const mailService = new MailService({
-                servers: {
-                    server1: {
+                servers: [
+                    {
                         host: 'localhost',
                         port: 587,
                         auth: {
@@ -44,7 +42,7 @@ describe('emailService', () => {
                             pass: 'invalidPassword'
                         }
                     },
-                    server2: {
+                    {
                         host: 'smtp.ethereal.email',
                         port: 587,
                         auth: {
@@ -52,7 +50,7 @@ describe('emailService', () => {
                             pass: 'KGMCGkZPMpYRKtkQFU'
                         }
                     }
-                }
+                ]
             });
 
             const message = {
@@ -71,8 +69,8 @@ describe('emailService', () => {
 
         it('should throw exception', async () => {
             const mailService = new MailService({
-                servers: {
-                    server1: {
+                servers: [
+                    {
                         host: 'localhost',
                         port: 587,
                         auth: {
@@ -80,7 +78,7 @@ describe('emailService', () => {
                             pass: 'invalidPassword'
                         }
                     },
-                    server2: {
+                    {
                         host: 'localhost',
                         port: 587,
                         auth: {
@@ -88,7 +86,7 @@ describe('emailService', () => {
                             pass: 'invalidPassword'
                         }
                     }
-                }
+                ]
             });
 
             const message = {
