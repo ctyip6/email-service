@@ -9,12 +9,10 @@ const logger = bunyan.createLogger({
 class SendMailError extends Error {
 
     constructor(message, sendErrors, ...params) {
-        // Pass remaining arguments (including vendor specific ones) to parent constructor
         super(...params);
         this.message = message;
         this.sendErrors = sendErrors;
 
-        // Maintains proper stack trace for where our error was thrown (only available on V8)
         if (Error.captureStackTrace) {
             Error.captureStackTrace(this, SendEmailError);
         }
